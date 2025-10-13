@@ -4,13 +4,14 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
-void colorFlicker(GLFWwindow* window) {
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+void colorChange(GLFWwindow* window) {
+	srand(time(NULL));
 
-	glfwSwapBuffers(window);
+	float red = float((rand() % 11)) / 10;
+	float green = float((rand() % 11)) / 10;
+	float blue = float((rand() % 11)) / 10;
 
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(red, green, blue, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glfwSwapBuffers(window);
@@ -45,7 +46,12 @@ int main()
 	glViewport(0, 0, width, height);
 
 	while (!glfwWindowShouldClose(window)) {
-		colorFlicker(window);
+		double timePassed = glfwGetTime();
+
+		if (int(timePassed) % 1 == 0) {
+			colorChange(window);
+		}
+
 		glfwPollEvents();
 	}
 

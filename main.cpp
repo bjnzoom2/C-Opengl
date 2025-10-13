@@ -4,6 +4,18 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+void colorFlicker(GLFWwindow* window) {
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glfwSwapBuffers(window);
+
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glfwSwapBuffers(window);
+}
+
 int main()
 {
 	glfwInit();
@@ -12,7 +24,10 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 800, "Test window", NULL, NULL);
+	int width = 800;
+	int height = 600;
+
+	GLFWwindow* window = glfwCreateWindow(width, height, "Test window", NULL, NULL);
 
 	if (window == NULL) {
 		std::cout << "WINDOW FAILED\n";
@@ -27,19 +42,10 @@ int main()
 
 	gladLoadGL();
 
-	glViewport(0, 0, 800, 800);
-
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glfwSwapBuffers(window);
+	glViewport(0, 0, width, height);
 
 	while (!glfwWindowShouldClose(window)) {
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glfwSwapBuffers(window);
-
+		colorFlicker(window);
 		glfwPollEvents();
 	}
 

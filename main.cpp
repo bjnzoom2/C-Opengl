@@ -4,18 +4,19 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
-void colorChange(GLFWwindow* window) {
-	srand(time(NULL));
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
 
-	float red = float((rand() % 11)) / 10;
-	float green = float((rand() % 11)) / 10;
-	float blue = float((rand() % 11)) / 10;
-
-	glClearColor(red, green, blue, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glfwSwapBuffers(window);
-}
+const char* fragmentShaderSource = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);\n"
+"}\0";
 
 int main()
 {
@@ -39,21 +40,64 @@ int main()
 		std::cout << "WINDOW SUCCESS\n";
 	}
 
+	GLfloat vertices[] = {
+		-0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		0.0f, 0.5f, 0.0f
+	};
+
 	glfwMakeContextCurrent(window);
 
 	gladLoadGL();
 
 	glViewport(0, 0, width, height);
 
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
+
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShader);
+
+	GLuint shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+
+	glUseProgram(shaderProgram);
+
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	GLuint VAO, VBO;
+
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
 	while (!glfwWindowShouldClose(window)) {
-		double timePassed = glfwGetTime();
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		if (int(timePassed) % 1 == 0) {
-			colorChange(window);
-		}
+		glUseProgram(shaderProgram);
+		glBindVertexArray(VAO);
 
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	glDeleteProgram(shaderProgram);
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

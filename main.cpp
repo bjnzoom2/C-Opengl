@@ -42,11 +42,13 @@ int main()
 		std::cout << "WINDOW SUCCESS\n";
 	}
 
-	GLfloat vertices[] = {
+	GLfloat vertices1[] = {
 		-0.75f, -0.25f, 0.0f,
 		-0.25f, -0.25f, 0.0f,
-		-0.50f, 0.25f, 0.0f,
+		-0.50f, 0.25f, 0.0f
+	};
 
+	GLfloat vertices2[] = {
 		0.75f, -0.25f, 0.0f,
 		0.25f, -0.25f, 0.0f,
 		0.50f, 0.25f, 0.0f
@@ -76,14 +78,26 @@ int main()
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	GLuint VAO, VBO;
+	GLuint VAO1, VBO1;
 
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+	glGenVertexArrays(1, &VAO1);
+	glBindVertexArray(VAO1);
 
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glGenBuffers(1, &VBO1);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO1);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	GLuint VAO2, VBO2;
+
+	glGenVertexArrays(1, &VAO2);
+	glBindVertexArray(VAO2);
+
+	glGenBuffers(1, &VBO2);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -104,17 +118,21 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shaderProgram);
-		glBindVertexArray(VAO);
+		glBindVertexArray(VAO1);
+		glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices1) / sizeof(vertices1[0]));
 
-		glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices)/sizeof(vertices[0]));
+		glBindVertexArray(VAO2);
+		glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices2) / sizeof(vertices2[0]));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
 	glDeleteProgram(shaderProgram);
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO1);
+	glDeleteBuffers(1, &VBO1);
+	glDeleteVertexArrays(1, &VAO2);
+	glDeleteBuffers(1, &VBO2);
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

@@ -5,27 +5,40 @@
 #include <glm/glm.hpp>
 
 enum PolyMode {Fill = 0, Line = 1};
+enum Color {Red = 0, Green = 1, Blue = 2};
 
 const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
 "void main()\n"
 "{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"   gl_Position = vec4(aPos, 1.0);\n"
 "}\0";
 
-const char* fragmentShaderSource1 = "#version 330 core\n"
+const char* fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
+"uniform vec4 color;\n"
 "void main()\n"
 "{\n"
-"   FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);\n"
+"   FragColor = color;\n"
 "}\0";
 
-const char* fragmentShaderSource2 = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"   FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);\n"
-"}\0";
+void colorShift(GLuint shaderProgram, Color color) {
+	float timeValue = glfwGetTime();
+	float colorValue = sin(timeValue) / 2 + 0.5f;
+	GLint colorUniformLocation = glGetUniformLocation(shaderProgram, "color");
+
+	switch (color) {
+		case 0:
+			glUniform4f(colorUniformLocation, colorValue, 0.0f, 0.0f, 0.0f);
+			break;
+		case 1:
+			glUniform4f(colorUniformLocation, 0.0f, colorValue, 0.0f, 0.0f);
+			break;
+		case 2:
+			glUniform4f(colorUniformLocation, 0.0f, 0.0f, colorValue, 0.0f);
+			break;
+	}
+}
 
 int main()
 {
@@ -49,16 +62,10 @@ int main()
 		std::cout << "WINDOW SUCCESS\n";
 	}
 
-	GLfloat vertices1[] = {
-		-0.75f, -0.25f, 0.0f,
-		-0.25f, -0.25f, 0.0f,
-		-0.50f, 0.25f, 0.0f
-	};
-
-	GLfloat vertices2[] = {
-		0.75f, -0.25f, 0.0f,
-		0.25f, -0.25f, 0.0f,
-		0.50f, 0.25f, 0.0f
+	GLfloat vertices[] = {
+		-0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		0.0f, 0.5f, 0.0f
 	};
 
 	glfwMakeContextCurrent(window);
@@ -71,49 +78,26 @@ int main()
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 	glCompileShader(vertexShader);
 
-	GLuint fragmentShader1 = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader1, 1, &fragmentShaderSource1, NULL);
-	glCompileShader(fragmentShader1);
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShader);
 
-	GLuint shaderProgram1 = glCreateProgram();
-	glAttachShader(shaderProgram1, vertexShader);
-	glAttachShader(shaderProgram1, fragmentShader1);
-	glLinkProgram(shaderProgram1);
-
-	glDeleteShader(fragmentShader1);
-
-	GLuint fragmentShader2 = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader2, 1, &fragmentShaderSource2, NULL);
-	glCompileShader(fragmentShader2);
-
-	GLuint shaderProgram2 = glCreateProgram();
-	glAttachShader(shaderProgram2, vertexShader);
-	glAttachShader(shaderProgram2, fragmentShader2);
-	glLinkProgram(shaderProgram2);
+	GLuint shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
 
 	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader2);
+	glDeleteShader(fragmentShader);
 
-	GLuint VAO1, VBO1;
+	GLuint VAO, VBO;
 
-	glGenVertexArrays(1, &VAO1);
-	glBindVertexArray(VAO1);
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
 
-	glGenBuffers(1, &VBO1);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO1);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	GLuint VAO2, VBO2;
-
-	glGenVertexArrays(1, &VAO2);
-	glBindVertexArray(VAO2);
-
-	glGenBuffers(1, &VBO2);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -133,23 +117,19 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shaderProgram1);
-		glBindVertexArray(VAO1);
-		glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices1) / sizeof(vertices1[0]));
+		glUseProgram(shaderProgram);
+		colorShift(shaderProgram, Blue);
 
-		glUseProgram(shaderProgram2);
-		glBindVertexArray(VAO2);
-		glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices2) / sizeof(vertices2[0]));
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices) / sizeof(vertices[0]));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
-	glDeleteProgram(shaderProgram1);
-	glDeleteVertexArrays(1, &VAO1);
-	glDeleteBuffers(1, &VBO1);
-	glDeleteVertexArrays(1, &VAO2);
-	glDeleteBuffers(1, &VBO2);
+	glDeleteProgram(shaderProgram);
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

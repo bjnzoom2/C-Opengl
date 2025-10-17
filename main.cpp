@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <filesystem>
-#include <windows.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -11,33 +10,10 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "stb_image.h"
+#include "shader.h"
 
 enum PolyMode {Fill = 0, Line = 1};
 enum Color {Red = 0, Green = 1, Blue = 2};
-
-const char* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"layout (location = 1) in vec3 aColor;\n"
-"layout (location = 2) in vec2 aTexCoords;\n"
-"out vec4 color;\n"
-"out vec2 texCoords;\n"
-"uniform mat4 transform;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = transform * vec4(aPos, 1.0);\n"
-"   color = vec4(aColor, 1.0);\n"
-"   texCoords = aTexCoords;\n"
-"}\0";
-
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec4 color;\n"
-"in vec2 texCoords;\n"
-"uniform sampler2D textureImage;\n"
-"void main()\n"
-"{\n"
-"   FragColor = texture(textureImage, texCoords) * color;\n"
-"}\0";
 
 int main()
 {
@@ -79,21 +55,7 @@ int main()
 
 	glViewport(0, 0, windowWidth, windowHeight);
 
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	Shader shaderProgram("vertexShader.vert", "fragmentShader.frag"); 
 
 	GLuint VAO, VBO, EBO;
 
@@ -159,16 +121,16 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shaderProgram);
+		shaderProgram.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glUniform1i(glGetUniformLocation(shaderProgram, "textureImage"), 0);
+		shaderProgram.setInt("textureImage", 0);
 
 		glm::mat4 trans = glm::mat4(1.0f);
 		trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
 		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
 		trans = glm::scale(trans, glm::vec3(1.0f, 1.0f, 1.0f));
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
 
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -179,7 +141,7 @@ int main()
 		glfwPollEvents();
 	}
 
-	glDeleteProgram(shaderProgram);
+	glDeleteProgram(shaderProgram.ID);
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);

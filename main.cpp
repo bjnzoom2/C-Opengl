@@ -1,10 +1,14 @@
 #include <iostream>
 #include <vector>
 #include <filesystem>
+#include <windows.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "stb_image.h"
 
@@ -17,9 +21,10 @@ const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 2) in vec2 aTexCoords;\n"
 "out vec4 color;\n"
 "out vec2 texCoords;\n"
+"uniform mat4 transform;\n"
 "void main()\n"
 "{\n"
-"   gl_Position = vec4(aPos, 1.0);\n"
+"   gl_Position = transform * vec4(aPos, 1.0);\n"
 "   color = vec4(aColor, 1.0);\n"
 "   texCoords = aTexCoords;\n"
 "}\0";
@@ -31,7 +36,7 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "uniform sampler2D textureImage;\n"
 "void main()\n"
 "{\n"
-"   FragColor = texture(textureImage, texCoords);\n"
+"   FragColor = texture(textureImage, texCoords) * color;\n"
 "}\0";
 
 int main()
@@ -59,7 +64,13 @@ int main()
 	GLfloat vertices[] = {
 		-0.25f, -0.25f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
 		0.25f, -0.25f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-		0.0f, 0.25f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f
+		-0.25f, 0.25f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
+		0.25f, 0.25f, 0.0f,   1.0f, 1.0f, 0.0f,   1.0f, 1.0f
+	};
+
+	GLuint indices[] = {
+		0, 1, 2,
+		1, 2, 3
 	};
 
 	glfwMakeContextCurrent(window);
@@ -84,7 +95,7 @@ int main()
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	GLuint VAO, VBO;
+	GLuint VAO, VBO, EBO;
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -102,6 +113,10 @@ int main()
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -111,6 +126,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	stbi_set_flip_vertically_on_load(true);
 	int texWidth, texHeight, texColorChannels;
 	std::filesystem::path filename = R"(C:\Users\luken\Downloads\smile.jpg)";
     unsigned char* data = stbi_load(filename.string().c_str(), &texWidth, &texHeight, &texColorChannels, 0);
@@ -136,19 +152,28 @@ int main()
 			break;
 	}
 
+
+	float num = 0;
+
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shaderProgram);
-
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glUniform1i(glGetUniformLocation(shaderProgram, "textureImage"), 0);
 
-		glBindVertexArray(VAO);
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+		trans = glm::scale(trans, glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -157,6 +182,7 @@ int main()
 	glDeleteProgram(shaderProgram);
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

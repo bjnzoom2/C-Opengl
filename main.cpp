@@ -89,7 +89,10 @@ int main()
 
 	glm::vec3 cubePos[] = {
 		glm::vec3(0.0f, 0.0f, 0.0f),
-		
+		glm::vec3(2.0f, 0.0f, -5.0f),
+		glm::vec3(-2.0f, 0.0f, -5.0f),
+		glm::vec3(0.0f, 2.0f, -5.0f),
+		glm::vec3(0.0f, -2.0f, -5.0f)
 	};
 
 	glfwMakeContextCurrent(window);

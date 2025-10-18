@@ -11,13 +11,59 @@
 
 #include "stb_image.h"
 #include "shader.h"
+#include "camera.h"
 
 enum PolyMode {Fill = 0, Line = 1};
 enum Color {Red = 0, Green = 1, Blue = 2};
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
+
+bool firstMouse = true;
+double lastX = 400;
+double lastY = 400;
+
+void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+	if (firstMouse) {
+		double lastX = xpos;
+		double lastY = ypos;
+		firstMouse = false;
+	}
+	double xOffset = xpos - lastX;
+	double yOffset = ypos - lastY;
+	lastX = xpos;
+	lastY = ypos;
+
+	const float sensitivity = 0.1f;
+	xOffset *= sensitivity;
+	yOffset *= sensitivity;
+
+	camera.yaw += xOffset;
+	camera.pitch -= yOffset;
+
+	if (camera.pitch > 89.0f) {
+		camera.pitch = 89.0f;
+	}
+	if (camera.pitch < -89.0f) {
+		camera.pitch = -89.0f;
+	}
+	camera.getMouseDirection();
+}
 
 void checkInput(GLFWwindow *window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		camera.cameraPos += camera.cameraSpeed * camera.cameraFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		camera.cameraPos -= camera.cameraSpeed * camera.cameraFront;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		camera.cameraPos -= camera.cameraSpeed * camera.cameraRight;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		camera.cameraPos += camera.cameraSpeed * camera.cameraRight;
 	}
 }
 
@@ -33,6 +79,8 @@ int main()
 	unsigned int windowHeight = 800;
 
 	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Test window", NULL, NULL);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouseCallback);
 
 	if (window == NULL) {
 		std::cout << "WINDOW FAILED\n";
@@ -89,10 +137,12 @@ int main()
 
 	glm::vec3 cubePos[] = {
 		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(2.0f, 0.0f, -5.0f),
-		glm::vec3(-2.0f, 0.0f, -5.0f),
-		glm::vec3(0.0f, 2.0f, -5.0f),
-		glm::vec3(0.0f, -2.0f, -5.0f)
+		glm::vec3(3.0f, 0.0f, 0.0f),
+		glm::vec3(-3.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 3.0f, 0.0f),
+		glm::vec3(0.0f, -3.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 3.0f),
+		glm::vec3(0.0f, 0.0f, -3.0f)
 	};
 
 	glfwMakeContextCurrent(window);
@@ -157,9 +207,6 @@ int main()
 			break;
 	}
 
-
-	float num = 0;
-
 	while (!glfwWindowShouldClose(window)) {
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -172,9 +219,11 @@ int main()
 
 		glm::mat4 proj = glm::mat4(1.0f);
 		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
-
+		
 		glm::mat4 view = glm::mat4(1.0f);
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		view = glm::lookAt(camera.cameraPos, camera.cameraPos + camera.cameraFront, camera.up);
+
+		camera.getDirection();
 
 		shaderProgram.setMat4("projection", proj);
 		shaderProgram.setMat4("view", view);
@@ -185,8 +234,7 @@ int main()
 		for (unsigned int i = 0; i < sizeof(cubePos) / sizeof(cubePos[0]); i++) {
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cubePos[i]);
-			model = glm::rotate(model, glm::radians(-50.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-			model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+			model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
 			shaderProgram.setMat4("model", model);
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -195,6 +243,7 @@ int main()
 		checkInput(window);
 
 		glfwSwapBuffers(window);
+
 		glfwPollEvents();
 	}
 

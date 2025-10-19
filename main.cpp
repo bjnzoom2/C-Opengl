@@ -15,6 +15,8 @@
 
 enum PolyMode {Fill = 0, Line = 1};
 enum Color {Red = 0, Green = 1, Blue = 2};
+PolyMode mode = Fill;
+
 Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 
 bool firstMouse = true;
@@ -135,15 +137,25 @@ int main()
 		14, 2, 15
 	};
 
-	glm::vec3 cubePos[] = {
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(3.0f, 0.0f, 0.0f),
-		glm::vec3(-3.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 3.0f, 0.0f),
-		glm::vec3(0.0f, -3.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 3.0f),
-		glm::vec3(0.0f, 0.0f, -3.0f)
+	srand(time(NULL));
+
+	glm::vec3 cubePos[300] = {
+		glm::vec3(0.0f, 0.0f, 0.0f)
 	};
+
+	for (unsigned int i = 1; i < sizeof(cubePos) / sizeof(cubePos[0]); i++) {
+		glm::vec3 vector;
+		for (unsigned int j = 0; j < 3; j++) {
+			int isSigned = rand() % 2;
+			if (isSigned % 2 == 0) {
+				vector[j] = rand() % 26;
+			}
+			else {
+				vector[j] = -(rand() % 26);
+			}
+		}
+		cubePos[i] = vector;
+	}
 
 	glfwMakeContextCurrent(window);
 
@@ -195,8 +207,6 @@ int main()
 	}
 
 	stbi_image_free(data);
-
-	PolyMode mode = Fill;
 
 	switch (mode) {
 		case 0:

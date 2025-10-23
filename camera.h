@@ -35,7 +35,7 @@ class Camera {
 		float yaw = -90.0f;
 		glm::vec3 direction;
 
-		float cameraSpeed = 0.01f;
+		float cameraSpeed = 4.0f;
 
 		void getDirection() {
 			cameraTarget = cameraPos + cameraFront;

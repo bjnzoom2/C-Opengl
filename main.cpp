@@ -127,7 +127,7 @@ int main()
 
 	srand(time(NULL));
 
-	glm::vec3 cubePos[300] = {};
+	glm::vec3 cubePos[300];
 
 	for (unsigned int i = 1; i < sizeof(cubePos) / sizeof(cubePos[0]); i++) {
 		glm::vec3 vector;
@@ -149,7 +149,7 @@ int main()
 
 	glViewport(0, 0, windowWidth, windowHeight);
 
-	Shader shaderProgram("vertexShader.vert", "fragmentShader.frag"); 
+	Shader shaderProgram("vertexShader.vert", "fragmentShader.frag");
 
 	GLuint VAO, VBO, EBO;
 
@@ -167,12 +167,15 @@ int main()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
+	Shader lightShaderProgram("vertexShader.vert", "lightFragmentShader.frag");
+
 	GLuint lightVAO;
 
 	glGenVertexArrays(1, &lightVAO);
 	glBindVertexArray(lightVAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -209,7 +212,7 @@ int main()
 		camera.getDirection();
 
 		shaderProgram.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
-		shaderProgram.setVec3("lightColor", glm::vec3(0.7f, 0.0f, 0.0f));
+		shaderProgram.setVec3("lightColor", glm::vec3(1.3f));
 
 		shaderProgram.setMat4("projection", proj);
 		shaderProgram.setMat4("view", view);
@@ -226,6 +229,18 @@ int main()
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		}
 
+		glm::mat4 model(1.0f);
+		lightShaderProgram.use();
+		lightShaderProgram.setMat4("projection", proj);
+		lightShaderProgram.setMat4("view", view);
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.5f));
+		lightShaderProgram.setMat4("model", model);
+
+		glBindVertexArray(lightVAO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
 		checkInput(window, deltatime);
 
 		glfwSwapBuffers(window);
@@ -234,7 +249,9 @@ int main()
 	}
 
 	glDeleteProgram(shaderProgram.ID);
+	glDeleteProgram(lightShaderProgram.ID);
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &lightVAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
 

@@ -26,12 +26,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\Downloads\smile.jpg">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="vertexShader.vert" />
     <None Include="fragmentShader.frag" />
+    <None Include="lightFragmentShader.frag" />
   </ItemGroup>
 </Project>

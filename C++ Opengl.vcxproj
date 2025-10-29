@@ -140,11 +140,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="External\glad\src\glad.c" />
+    <None Include="lightFragmentShader.frag">
+      <FileType>Document</FileType>
+    </None>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stb_config.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\Downloads\smile.jpg" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragmentShader.frag" />
